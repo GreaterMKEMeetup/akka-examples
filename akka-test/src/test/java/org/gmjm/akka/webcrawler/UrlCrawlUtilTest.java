@@ -38,7 +38,7 @@ public class UrlCrawlUtilTest {
 		
 		ActorSystem as = ActorSystem.create("crawler");
 		
-		ActorRef crawlAr = as.actorOf(new RoundRobinPool(4).props(Props.create(CrawlActor.class)),"crawl_crawlAr");
+		ActorRef crawlAr = as.actorOf(new RoundRobinPool(4).props(Props.create(CrawlActor.class)),"crawl_crawlActor");
 		as.actorOf(Props.create(CrawlLogger.class),"crawl_crawlLogger");
 		as.actorOf(Props.create(FileWritingManager.class),"output_fileManager");
 		as.actorOf(Props.create(SysOutActor.class),"crawl_sysout");
