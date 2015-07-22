@@ -7,25 +7,33 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.gmjm.matrix.Matrix;
 import org.gmjm.matrix.MatrixStreamParser;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
+import scala.concurrent.Await;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
+import scala.concurrent.duration.FiniteDuration;
 import akka.actor.ActorSystem;
 import akka.dispatch.ExecutionContexts;
 import akka.dispatch.Futures;
+import akka.dispatch.Mapper;
 
 public class FuturesTest {
 	
+	@Ignore
 	@Test
 	public void generateTestData() throws IOException {
 		File testFile = new File("C:/matrix/testFile.txt");
@@ -33,17 +41,17 @@ public class FuturesTest {
 		
 		Random rand = new Random();
 		
-		int numOfMatricies = 1000;
+		int numOfMatricies = 12;
 		
-		int cols = 50;
-		int rows = 50;
+		int cols = 320;
+		int rows = 320;
 		
 		for(int i = 0; i < numOfMatricies; i++) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(rows).append(",");
 			sb.append(cols).append(",");
 			for(int j = 0; j < cols * rows; j ++)
-				sb.append(rand.nextInt()).append(",");
+				sb.append(rand.nextInt()%10).append(",");
 			sb.append("\n");
 			bw.append(sb.toString());
 			
@@ -56,26 +64,16 @@ public class FuturesTest {
 	}
 	
 	@Test
-	public void testNonFuturesMatrixMultiplication() throws FileNotFoundException, IOException {
+	public void testNonFuturesMatrixMultiplication() throws FileNotFoundException, IOException, InterruptedException {
 		File testFile = new File("C:/matrix/testFile.txt");
 		List<Matrix> matricies = MatrixStreamParser.parseMatriciesStream(new FileInputStream(testFile));
 		
-		Matrix result = matricies.remove(0);
-		
-		for(Matrix m : matricies)
-		{
-			result = Matrix.multiply(result, m);
-		}
-				
-		//System.out.println(result);
+		MatrixReduction.reduce(matricies);
 		
 	}
 	
 	@Test
-	public void testFuturesMatrixMultiplication() throws FileNotFoundException, IOException, InterruptedException {
-		
-		ActorSystem as = ActorSystem.create();
-		
+	public void testFuturesMatrixMultiplication() throws Exception {
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 	    ExecutionContext ec = ExecutionContexts.fromExecutorService(executor);
 	    
@@ -83,11 +81,23 @@ public class FuturesTest {
 	  
 	    List<Matrix> matricies = MatrixStreamParser.parseMatriciesStream(new FileInputStream(testFile));
 		
+	    List<Future<Matrix>> futures = Lists.partition(matricies, 3).stream()
+	    	.map(matrixList -> new MatrixReduction(matrixList))
+	    	.map(matrixReduction -> Futures.future(matrixReduction, ec))
+	    	.collect(Collectors.toList());
 	    
-		Future<Matrix> mFuture = Futures.future(new MatrixReduction(matricies.get(0), matricies.get(1)),ec);
+	   
 	    
-		mFuture.onSuccess(new PrintResult(), as.dispatcher());
+		Future<Iterable<Matrix>> futureSubProducts = Futures.sequence(futures, ec);
 		
-		Thread.sleep(10000);
+		Future<Matrix> finalProduct = futureSubProducts.map(new Mapper<Iterable<Matrix>,Matrix>(){
+			@Override
+			public Matrix apply(Iterable<Matrix> matricies) {
+				return MatrixReduction.reduce(matricies);
+			}
+		}, ec);
+		
+		Await.result(finalProduct, new FiniteDuration(1000,TimeUnit.SECONDS));
+		
 	} 
 }

@@ -6,22 +6,35 @@ import org.gmjm.matrix.Matrix;
 
 public class MatrixReduction implements Callable<Matrix>{
 
-	public final Matrix a;
-	public final Matrix b;
+	public final Iterable<Matrix> toReduce;
 	
 	
 	
-	public MatrixReduction(Matrix a, Matrix b) {
+	public MatrixReduction(Iterable<Matrix> toReduce) {
 		super();
-		this.a = a;
-		this.b = b;
+		this.toReduce = toReduce;
 	}
-
-
 
 	@Override
 	public Matrix call() throws Exception {
-		return Matrix.multiply(a, b);
+		
+		return reduce(toReduce);
+	}
+
+	public static Matrix reduce(Iterable<Matrix> toReduce) {
+		Matrix result = null;
+		
+		for(Matrix m : toReduce) {
+			result = multiply(result, m);				
+		}
+		
+		return result;
+	}
+
+	private static Matrix multiply(Matrix result, Matrix m) {
+		if(result == null)
+			return m;
+		return Matrix.multiply(result, m);
 	}
 
 }

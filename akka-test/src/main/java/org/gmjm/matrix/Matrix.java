@@ -76,6 +76,9 @@ public class Matrix {
 	}
 	
 	public static Matrix multiply(Matrix a, Matrix b) {
+		if(a == null || b == null)
+			throw new IllegalArgumentException("Cannot multiply null matricies.");
+		
 		if(a.cols != b.rows)
 		{
 			throw new IllegalArgumentException(String.format("Cannot multiply. A.cols must equal B.rows. (%s != %s).",a.cols,b.rows));  
