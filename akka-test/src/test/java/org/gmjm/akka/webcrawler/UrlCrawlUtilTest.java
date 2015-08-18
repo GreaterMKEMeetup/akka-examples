@@ -27,6 +27,8 @@ public class UrlCrawlUtilTest {
 	public void testCrawl() throws InterruptedException, IOException {
 		long startTime = System.currentTimeMillis();
 		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
 		ActorSystem as = ActorSystem.create("crawler");
 		
 		Props crawlPropertiesSmallestMailbox = new SmallestMailboxPool(4).props(Props.create(CrawlActor.class));
@@ -38,13 +40,13 @@ public class UrlCrawlUtilTest {
 		as.actorOf(Props.create(SysOutActor.class),"crawl_sysout");
 		as.actorOf(Props.create(new SearchCollector.SearchCollectorCreator(1)),"output_searchCollector");
 		
+		
+		waitForInput("start", br);
+		
 		as.actorSelection("akka://crawler/user/crawl*").tell(new SearchCrawl("http://aglassman.github.io",0,4,"indiana jones",true), null);
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		
-		while(!br.readLine().equals("stop")) {
-			System.out.println("Runtime: " + (System.currentTimeMillis() - startTime)/1000 + " seconds");
-		}
+		waitForInput("stop", br);
 		
 		br.close();
 		
@@ -52,6 +54,12 @@ public class UrlCrawlUtilTest {
 		as.awaitTermination(new FiniteDuration(1000,TimeUnit.SECONDS));
 		
 		System.out.println("Terminated: " + (System.currentTimeMillis() - startTime)/1000 + " seconds");
+	}
+
+	private void waitForInput(String toMatch, BufferedReader br) throws IOException {
+		while(!br.readLine().equals(toMatch)) {
+			System.out.println("Waiting for: " + toMatch);
+		}
 	}
 	
 }

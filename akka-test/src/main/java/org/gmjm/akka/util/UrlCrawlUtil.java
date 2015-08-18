@@ -1,4 +1,4 @@
-package org.gmjm.akka.webcrawler;
+package org.gmjm.akka.util;
 
 import java.io.IOException;
 import java.net.URL;

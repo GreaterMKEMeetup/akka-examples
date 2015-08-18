@@ -3,6 +3,7 @@ package org.gmjm.akka.webcrawler;
 import java.io.IOException;
 
 import org.gmjm.akka.util.FileOutput;
+import org.gmjm.akka.util.UrlCrawlUtil;
 import org.jsoup.nodes.Document;
 import org.xml.sax.SAXException;
 
