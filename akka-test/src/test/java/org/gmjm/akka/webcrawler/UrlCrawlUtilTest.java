@@ -19,8 +19,8 @@ public class UrlCrawlUtilTest {
 
 
 	static {
-		System.setProperty("http.proxyHost", "internet.ground.fedex.com");
-		System.setProperty("http.proxyPort", "80");
+		//System.setProperty("http.proxyHost", "your.proxy.here");
+		//System.setProperty("http.proxyPort", "80");
 	}
 	
 	@Test
